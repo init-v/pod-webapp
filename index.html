@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pod Vault — Portable Knowledge OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;400;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --ink:#0c0c0e; --fog:#101018; --card:#14141f; --ash:#c8c8d4;
+      --mute:#8f90a5; --accent:#7bff7a; --accent-2:#7aa7ff; --warn:#ffb86b;
+      --line:rgba(255,255,255,0.08); --glass:rgba(20,20,35,0.8);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; color:var(--ash); background:radial-gradient(1000px 600px at 70% -10%, #1e1e3a, #0b0b12 60%);
+      font-family:"Fraunces", serif; min-height:100vh; letter-spacing:.2px;
+    }
+    .mono{font-family:"IBM Plex Mono", monospace; letter-spacing:0}
+    .wrap{max-width:1200px; margin:0 auto; padding:28px 22px 60px}
+    .top{display:flex; align-items:center; justify-content:space-between; gap:16px}
+    .logo{display:flex; align-items:center; gap:12px}
+    .logo .dot{width:14px;height:14px;border-radius:50%; background:var(--accent); box-shadow:0 0 18px var(--accent)}
+    .hero{display:grid; grid-template-columns:1.2fr .8fr; gap:26px; margin:28px 0}
+    .headline{font-size:40px; line-height:1.05; margin:0 0 12px}
+    .sub{color:var(--mute); font-size:16px}
+    .pill{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:rgba(123,255,122,.12); color:var(--accent)}
+    .grid{display:grid; grid-template-columns:repeat(12,1fr); gap:16px}
+    .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; box-shadow:0 20px 60px rgba(0,0,0,.35)}
+    .card h3{margin:0 0 6px; font-size:18px}
+    .card p{margin:0; color:var(--mute)}
+    .stack{display:flex; flex-direction:column; gap:12px}
+    .tabs{display:flex; gap:10px; margin:12px 0 18px}
+    .tab{padding:10px 14px; border-radius:10px; background:#10101a; border:1px solid var(--line); color:var(--mute); cursor:pointer}
+    .tab.active{background:linear-gradient(145deg,#1a1a2a,#10101a); color:#fff; border-color:#2b2b44}
+    .panel{display:none}
+    .panel.active{display:block}
+
+    .upload{border:2px dashed #2b2b44; border-radius:16px; padding:26px; text-align:center; background:rgba(17,17,28,.6)}
+    .upload:hover{border-color:var(--accent-2)}
+    .upload input{display:none}
+    .btn{background:linear-gradient(135deg,var(--accent),#39d2ff); color:#0b0b12; padding:12px 16px; border:none; border-radius:12px; font-weight:700; cursor:pointer}
+    .btn.alt{background:#1b1b2a; color:#fff; border:1px solid var(--line)}
+
+    .row{display:flex; gap:10px; align-items:center}
+    .row input, .row select{flex:1; background:#0f0f18; color:#fff; border:1px solid var(--line); border-radius:10px; padding:10px}
+
+    .chat{background:#0f0f1a; border-radius:16px; padding:16px; min-height:240px; max-height:360px; overflow:auto; border:1px solid var(--line)}
+    .bubble{padding:10px 12px; border-radius:12px; max-width:80%; margin:8px 0}
+    .bubble.user{background:#2c2d48; margin-left:auto}
+    .bubble.ai{background:#141425}
+
+    .sources{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px}
+    .source{padding:12px; border-radius:14px; border:1px solid var(--line); background:#10101b}
+
+    .footer{margin-top:30px; color:#80809b; font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="logo">
+        <div class="dot"></div>
+        <div>
+          <div class="mono" style="font-size:12px;color:#9fa0b5">POD VAULT</div>
+          <div style="font-weight:700">Portable Knowledge OS</div>
+        </div>
+      </div>
+      <div class="pill mono">local-first · encrypted · agent-ready</div>
+    </div>
+
+    <div class="hero">
+      <div>
+        <h1 class="headline">Connect. Unlock. Ask.
+          <br>Own your research forever.</h1>
+        <p class="sub">Import pods, decrypt locally, browse sources, and generate high‑quality content in one place.</p>
+        <div class="row" style="margin-top:16px">
+          <select id="podSelect"></select>
+          <button class="btn alt" onclick="loadSources()">Refresh Sources</button>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <h3>What this replaces</h3>
+          <p class="mono">NotebookLM (local), scattered notes, PDF chaos, manual summarization.</p>
+        </div>
+        <div class="card">
+          <h3>What this adds</h3>
+          <p class="mono">Portable encrypted pods, consent layer, agent workflows, real ownership.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="upload">📥 Import</div>
+      <div class="tab" data-tab="sources">📚 Sources</div>
+      <div class="tab" data-tab="qa">💬 Q&A</div>
+    </div>
+
+    <div class="panel active" id="panel-upload">
+      <div class="grid">
+        <div class="card" style="grid-column:span 7">
+          <h3>Drop a pod or raw files</h3>
+          <div class="upload" id="dropZone">
+            <div style="font-size:40px">📦</div>
+            <div class="mono">Drag & drop .dpod / .pdf / .md / .txt</div>
+            <div class="sub">We’ll ingest locally and update your pod.</div>
+            <label class="btn" style="display:inline-block;margin-top:12px">
+              Browse files
+              <input type="file" id="fileInput" multiple>
+            </label>
+          </div>
+          <div id="uploadLog" class="mono" style="margin-top:12px;color:#7a7b92"></div>
+        </div>
+        <div class="card" style="grid-column:span 5">
+          <h3>Unlock / Encrypt</h3>
+          <p class="sub">Unlock a pod with a passphrase. Biometrics coming next.</p>
+          <div class="row" style="margin-top:10px">
+            <input id="pass" placeholder="Passphrase" type="password" />
+            <button class="btn">Unlock</button>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn alt">Encrypt pod</button>
+            <button class="btn alt">Export .dpod</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-sources">
+      <div class="sources" id="sourcesGrid"></div>
+    </div>
+
+    <div class="panel" id="panel-qa">
+      <div class="card">
+        <h3>Ask your pod</h3>
+        <div class="chat" id="chat"></div>
+        <div class="row" style="margin-top:10px">
+          <input id="question" placeholder="Ask something..." />
+          <button class="btn" onclick="ask()">Ask</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer mono">Backend: pod_qa.py on http://localhost:7868 (configure in app.js if different)</div>
+  </div>
+
+  <script>
+    const API = "http://localhost:7868";
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(t=>t.onclick=()=>{
+      tabs.forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('panel-'+t.dataset.tab).classList.add('active');
+    });
+
+    async function loadPods(){
+      const res = await fetch(`${API}/pods`);
+      const pods = await res.json();
+      const sel = document.getElementById('podSelect');
+      sel.innerHTML = pods.map(p=>`<option value="${p}">${p}</option>`).join('');
+      loadSources();
+    }
+
+    async function loadSources(){
+      const pod = document.getElementById('podSelect').value || 'openclaw';
+      const res = await fetch(`${API}/sources?pod=${pod}`);
+      const sources = await res.json();
+      const grid = document.getElementById('sourcesGrid');
+      grid.innerHTML = sources.map(s=>`
+        <div class="source">
+          <div style="font-weight:700">${s.filename}</div>
+          <div class="mono" style="color:#80809b">${s.file_type || 'file'} · ${s.size_chars} chars</div>
+          <div class="mono" style="color:#6b6b7f">${s.created_at || ''}</div>
+        </div>
+      `).join('');
+    }
+
+    async function ask(){
+      const q = document.getElementById('question').value.trim();
+      if(!q) return;
+      const chat = document.getElementById('chat');
+      chat.innerHTML += `<div class="bubble user">${q}</div>`;
+      const pod = document.getElementById('podSelect').value || 'openclaw';
+      const res = await fetch(`${API}/ask?q=${encodeURIComponent(q)}&pod=${pod}`);
+      const data = await res.json();
+      chat.innerHTML += `<div class="bubble ai">${data.answer || data.error}</div>`;
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    // Upload handlers (simple; backend supports /add)
+    const drop = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const log = document.getElementById('uploadLog');
+
+    drop.ondragover = e=>{e.preventDefault(); drop.style.borderColor = '#7aa7ff'};
+    drop.ondragleave = ()=>{drop.style.borderColor = '#2b2b44'};
+    drop.ondrop = e=>{e.preventDefault(); drop.style.borderColor = '#2b2b44'; handleFiles(e.dataTransfer.files)};
+    fileInput.onchange = ()=>handleFiles(fileInput.files);
+
+    async function handleFiles(files){
+      const pod = document.getElementById('podSelect').value || 'openclaw';
+      for(const f of files){
+        log.textContent = `Uploading ${f.name}...`;
+        const content = await f.text();
+        const resp = await fetch(`${API}/add`,{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pod, filename:f.name, content})});
+        const data = await resp.json();
+        log.textContent = data.success ? `✓ Added ${f.name}` : `✕ ${data.error}`;
+      }
+      loadSources();
+    }
+
+    loadPods();
+  </script>
+</body>
+</html>
